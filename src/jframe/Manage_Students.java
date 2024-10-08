@@ -713,7 +713,7 @@ private File selectedFile;
     }//GEN-LAST:event_jLabel1MouseClicked
 
     private void rSTableMetro2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_rSTableMetro2MouseClicked
-       int viewRow = rSTableMetro2.getSelectedRow();
+    int viewRow = rSTableMetro2.getSelectedRow();
     
     // Convert the view row index to the corresponding model row index
     int modelRow = rSTableMetro2.convertRowIndexToModel(viewRow);

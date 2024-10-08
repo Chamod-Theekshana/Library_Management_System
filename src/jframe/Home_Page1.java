@@ -772,6 +772,11 @@ public void setmail(String email){
         jCTextField1.setHorizontalAlignment(javax.swing.JTextField.CENTER);
         jCTextField1.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
         jCTextField1.setPlaceholder("Search...");
+        jCTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCTextField1ActionPerformed(evt);
+            }
+        });
         jCTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jCTextField1KeyReleased(evt);
@@ -1055,6 +1060,10 @@ public void setmail(String email){
         String searchstring=jCTextField2.getText();
         searchb(searchstring);
     }//GEN-LAST:event_jCTextField2KeyReleased
+
+    private void jCTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCTextField1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jCTextField1ActionPerformed
 
     /**
      * @param args the command line arguments
