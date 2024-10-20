@@ -9,7 +9,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import static jframe.DBConnection.con;
@@ -20,13 +22,18 @@ import static jframe.DBConnection.con;
  */
 public class View_Records extends javax.swing.JFrame {
 private String mail;
+
     /**
      * Creates new form View_Records
      */
     public View_Records() {
         initComponents();
         setStudentDetailsToTable();
+        inventoryTypeList();
     }
+    
+
+    
     DefaultTableModel model;
     public void setStudentDetailsToTable(){
         
@@ -67,45 +74,64 @@ private String mail;
         DefaultTableModel model=(DefaultTableModel) rSTableMetro1.getModel();
         model.setRowCount(0);
     }
-public boolean search() {
+     
+     private String[] typelist = {"Status","ALL", "Pending", "Returned"};
+
+public void inventoryTypeList() {
+    // Ensure the type list is populated
+    List<String> typeL = new ArrayList<>();
+    for (String data : typelist) {
+        typeL.add(data);
+    }
+
+    // Convert list to array and set it to the combo box model
+    jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(typeL.toArray(new String[0])));
+}
+
+
+public boolean search(String searchText) {
     boolean isSearch = false;
     DefaultTableModel model = (DefaultTableModel) rSTableMetro1.getModel();
     model.setRowCount(0); // Clear the table before adding search results
 
-    java.util.Date fDate = jDateChooser3.getDate(); // "To date"
-
-    if (fDate == null) {
-        // Handle the case when the to-date is not selected
-        JOptionPane.showMessageDialog(null, "Please select the to-date.");
-        return isSearch;
-    }
-
-    // Calculate "from date" by subtracting 14 days from the "to date"
-    Calendar cal = Calendar.getInstance();
-    cal.setTime(fDate);
-    cal.add(Calendar.DAY_OF_MONTH, +14); // Subtract 14 days
-    java.util.Date tDate = cal.getTime();
-
-    Long l1 = fDate.getTime();
-    Long l2 = tDate.getTime();
-
-    java.sql.Date fromDate = new java.sql.Date(l1);
-    java.sql.Date toDate = new java.sql.Date(l2);
-
     try {
         con = DBConnection.getconnection();
+        
+        // Check if a status is selected in the combo box
+        String selectedStatus = jComboBox1.getSelectedItem().toString();
+        if (selectedStatus == "Status" || selectedStatus.isEmpty()|| selectedStatus==null) {
+            // Show an alert if no status is selected
+            JOptionPane.showMessageDialog(null, "You should select a Status first!", "Select Status", JOptionPane.WARNING_MESSAGE);
+            return false; // Exit the method if no status is selected
+        }
+        
+        // Base SQL query
         String sql = "SELECT bd.BookID, bt.Book_Name, bd.StudentID, st.Student_Name, bd.Issue_Date, bd.Due_Date, bd.Status " +
                      "FROM issue_book_details bd " +
                      "JOIN book_details bt ON bd.BookID = bt.BookID " +
                      "JOIN student st ON bd.StudentID = st.StudentID " +
-                     "WHERE bd.Issue_Date BETWEEN ? AND ?";
+                     "WHERE bd.Issue_Date LIKE ?";  // Search for date
+        
+        // Modify query if a specific status is selected from the combo box
+        if (!selectedStatus.equals("ALL")) {
+            sql += " AND bd.Status = ?"; // Add status filter if not "ALL"
+        }
 
         PreparedStatement pst = con.prepareStatement(sql);
-        pst.setDate(1, fromDate); // From date (14 days before the to-date)
-        pst.setDate(2, toDate);   // To date (selected by the user)
+
+        // Set the search date with wildcards for SQL LIKE
+        String likeQuery = searchText + "%";  // Appending '%' for partial matches (starts with entered text)
+        pst.setString(1, likeQuery);
+
+        // Set status value if needed
+        if (!selectedStatus.equals("ALL")) {
+            pst.setString(2, selectedStatus);
+        }
 
         ResultSet rs = pst.executeQuery();
 
+        // Populate table and count rows
+        int rowCount = 0;
         while (rs.next()) {
             String studentId = rs.getString("StudentID");
             String bookId = rs.getString("BookID");
@@ -117,14 +143,21 @@ public boolean search() {
 
             Object[] obj = {bookId, bookName, studentId, studentName, issueDate, dueDate, status};
             model.addRow(obj);
+            rowCount++;
             isSearch = true;
         }
+
+        // Set the row count in jTextField2
+        jTextField2.setText(String.valueOf(rowCount));
 
     } catch (Exception e) {
         e.printStackTrace();
     }
     return isSearch;
 }
+
+
+
 
 
 
@@ -143,8 +176,10 @@ public boolean search() {
         jPanel4 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel24 = new javax.swing.JLabel();
-        jDateChooser3 = new com.toedter.calendar.JDateChooser();
-        rSMaterialButtonCircle2 = new rojerusan.RSMaterialButtonCircle();
+        jTextField1 = new javax.swing.JTextField();
+        jTextField2 = new javax.swing.JTextField();
+        jComboBox1 = new javax.swing.JComboBox<>();
+        jLabel25 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         rSTableMetro1 = new rojerusan.RSTableMetro();
@@ -188,16 +223,33 @@ public boolean search() {
         jLabel24.setForeground(new java.awt.Color(255, 255, 255));
         jLabel24.setText("Issue Date :");
 
-        jDateChooser3.setBackground(new java.awt.Color(120, 176, 223));
-        jDateChooser3.setDateFormatString("yyyy/MM/dd");
-        jDateChooser3.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-
-        rSMaterialButtonCircle2.setText("Search");
-        rSMaterialButtonCircle2.addActionListener(new java.awt.event.ActionListener() {
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                rSMaterialButtonCircle2ActionPerformed(evt);
+                jTextField1ActionPerformed(evt);
             }
         });
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTextField1KeyReleased(evt);
+            }
+        });
+
+        jTextField2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField2ActionPerformed(evt);
+            }
+        });
+
+        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox1ActionPerformed(evt);
+            }
+        });
+
+        jLabel25.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jLabel25.setForeground(new java.awt.Color(255, 255, 255));
+        jLabel25.setText("Number of books ");
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -211,13 +263,17 @@ public boolean search() {
                     .addComponent(jLabel2))
                 .addGap(0, 401, Short.MAX_VALUE))
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(260, 260, 260)
+                .addGap(245, 245, 245)
                 .addComponent(jLabel24)
                 .addGap(18, 18, 18)
-                .addComponent(jDateChooser3, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(202, 202, 202))
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(73, 73, 73)
+                .addComponent(jLabel25)
+                .addGap(26, 26, 26)
+                .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(114, 114, 114)
+                .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -229,18 +285,14 @@ public boolean search() {
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 57, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jDateChooser3, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jLabel24)
-                                .addGap(8, 8, 8)))
-                        .addGap(52, 52, 52))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(44, 44, 44))))
+                .addGap(48, 48, 48)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel24)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel25)
+                    .addComponent(jComboBox1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(63, Short.MAX_VALUE))
         );
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
@@ -265,16 +317,16 @@ public boolean search() {
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(90, 90, 90)
+                .addGap(87, 87, 87)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 1020, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(67, 67, 67)
+                .addGap(39, 39, 39)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(73, Short.MAX_VALUE))
+                .addContainerGap(101, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -296,18 +348,6 @@ public boolean search() {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void rSMaterialButtonCircle2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rSMaterialButtonCircle2ActionPerformed
-        // TODO add your handling code here:
-        if(search()==true)
-        {
-            JOptionPane.showMessageDialog(this, "Record Founded");
-        }
-        else{
-            JOptionPane.showMessageDialog(this, "No Record Founded");
-        }
-       
-    }//GEN-LAST:event_rSMaterialButtonCircle2ActionPerformed
-
     private void jLabel1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel1MouseClicked
         // TODO add your handling code here:
         mail=Login_Page1.getInstance().getmail();
@@ -317,6 +357,24 @@ public boolean search() {
         this.dispose();
 
     }//GEN-LAST:event_jLabel1MouseClicked
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField1ActionPerformed
+
+    private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField2ActionPerformed
+
+    private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
+        // TODO add your handling code here:
+         String searchText = jTextField1.getText().trim();
+        search(searchText);  
+    }//GEN-LAST:event_jTextField1KeyReleased
+
+    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jComboBox1ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -356,15 +414,17 @@ public boolean search() {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private com.toedter.calendar.JDateChooser jDateChooser3;
+    private javax.swing.JComboBox<String> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel24;
+    private javax.swing.JLabel jLabel25;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
-    private rojerusan.RSMaterialButtonCircle rSMaterialButtonCircle2;
+    private javax.swing.JTextField jTextField1;
+    private javax.swing.JTextField jTextField2;
     private rojerusan.RSTableMetro rSTableMetro1;
     // End of variables declaration//GEN-END:variables
 }

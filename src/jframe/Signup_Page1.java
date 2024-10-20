@@ -194,29 +194,29 @@ public void com(){
             loginpst.setString(2, id_number);
             loginpst.setInt(3, verify);
             
-            String login="INSERT INTO login(password,ID_Number) VALUES(?,?)";
+            String login="INSERT INTO login(ID_Number) VALUES(?)";
             PreparedStatement login1=con.prepareStatement(login);
             
-            login1.setString(1, password);
-            login1.setString(2, id_number);
+          
+            login1.setString(1, id_number);
            
             
            int updateRowCounta = adminpst.executeUpdate();
-        int updateRowCountl = loginpst.executeUpdate();
-        int updateRowCount2=login1.executeUpdate();
-        if (updateRowCounta > 0 && updateRowCountl > 0 && updateRowCount2 >0) {
+           int updateRowCountl = loginpst.executeUpdate();
+           int updateRowCount2=login1.executeUpdate();
+           if (updateRowCounta > 0 && updateRowCountl > 0 && updateRowCount2 >0) {
              sendVerificationEmail(loginid, verify);
-            JOptionPane.showMessageDialog(this, "Record Inserted Successfully. Check your email for verification.");
-            java.awt.EventQueue.invokeLater(new Runnable() {
-        public void run() {
+             JOptionPane.showMessageDialog(this, "Record Inserted Successfully. Check your email for verification.");
+           
+       
             setname(loginid);
             setpass(password);
             setid(id_number);
             verification_code vc= new verification_code(getname(), getpass(), getid());
             vc.setVisible(true);
            
-        }
-    });
+        
+    
         } else {
             JOptionPane.showMessageDialog(this, "Record Insertion Failure");
         }
