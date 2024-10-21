@@ -131,8 +131,8 @@ public void com(){
     private void sendVerificationEmail(String toEmail, int verificationCode) {
         String host = "smtp.gmail.com"; // SMTP server (change if you're using a different provider)
         int port = 587; // SMTP port (change if needed)
-        String username = "channarox573@gmail.com"; // Your email address
-        String password = "ooim vnbz vuzy yaka"; // Your email password
+        String username = "Your email address"; // Your email address
+        String password = "Your email password"; // Your email password
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");

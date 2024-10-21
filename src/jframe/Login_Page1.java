@@ -15,7 +15,7 @@ import javax.swing.Action;
 import javax.swing.JOptionPane;
 import javax.swing.Timer;
 import jdk.nashorn.internal.objects.Global;
-import static jframe.DBConnection.con;
+import static jframe.DBConnection.getconnection;
 
 /**
  *
@@ -23,9 +23,8 @@ import static jframe.DBConnection.con;
  */
 public class Login_Page1 extends javax.swing.JFrame {
    
-    
     private int targetX;
-     private int targetX1;
+    private int targetX1;
     private int deltaX;
     private int deltaX1;
     private Timer timer;
@@ -126,8 +125,8 @@ public void setmail(String mail){
        
        try 
        {
-         con = DBConnection.getconnection();
-    PreparedStatement pst = con.prepareStatement("SELECT * FROM login WHERE email = ? AND password = ?");
+        
+         PreparedStatement pst = getconnection().prepareStatement("SELECT email,password FROM login WHERE email = ? AND password = ?");
          
          pst.setString(1, loginid);
          pst.setString(2, password);
@@ -135,7 +134,7 @@ public void setmail(String mail){
          ResultSet rs=pst.executeQuery();
          if(rs.next())
          {
-             PreparedStatement pst1 = con.prepareStatement("SELECT admin.name, login.email FROM admin JOIN login ON admin.ID_number = login.ID_number WHERE login.email = ?"); 
+             PreparedStatement pst1 = getconnection().prepareStatement("SELECT admin.name, login.email FROM admin JOIN login ON admin.ID_number = login.ID_number WHERE login.email = ?"); 
              pst1.setString(1, loginid);
              ResultSet rs1=pst1.executeQuery();
              if(rs1.next()){
