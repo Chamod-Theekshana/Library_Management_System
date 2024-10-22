@@ -5,11 +5,13 @@
  */
 package jframe;
 
+import java.awt.Color;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Calendar;
+import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import static jframe.DBConnection.con;
 
@@ -24,94 +26,143 @@ private String mail;
      */
     public Issue_Book() {
         initComponents();
+        jPanel6.setVisible(false);
+        jPanel9.setVisible(false);
     }
-    public void getbookdetails(){
+    public void displayBookDetails(String bookID) {
+    try {
+        con = DBConnection.getconnection(); // Get the database connection
+
+        // Prepare the SQL query with JOIN to fetch book details and stock information
+        PreparedStatement pst = con.prepareStatement(
+            "SELECT book_details.BookID, book_details.Book_Name, book_details.Author, book_stock.Quantity " +
+            "FROM book_details " +
+            "INNER JOIN book_stock ON book_details.BookID = book_stock.BookID " +
+            "WHERE book_details.BookID = ?"
+        );
+        pst.setString(1, bookID); // Set the BookID parameter
+        ResultSet rs = pst.executeQuery(); // Execute the query
+
+        if (rs.next()) {  // If book details exist
+            // Populate the fields with book details and quantity
+            jb1.setText(rs.getString("BookID"));
+            jb2.setText(rs.getString("Book_Name"));
+            jb3.setText(rs.getString("Author"));
+            jb4.setText(rs.getString("Quantity")); // Ensure that Quantity exists in book_stock
+        } else {
+            // Clear fields if no book is found
+            jb1.setText("");
+            jb2.setText("");
+            jb3.setText("");
+            jb4.setText("");
+        }
         
-        String bookid=jCTextField3.getText();
-        try {
-          con = DBConnection.getconnection();
-PreparedStatement pst = con.prepareStatement(
-    "SELECT book_details.BookID, book_details.Book_Name, book_details.Author, book_stock.Quantity " +
-    "FROM book_details " +
-    "INNER JOIN book_stock ON book_details.BookID = book_stock.BookID " +
-    "WHERE book_details.BookID = ?"
-);
-         pst.setString(1, bookid);
-            ResultSet rs=pst.executeQuery();
-            while(rs.next()){
-                jb1.setText(rs.getString("BookID"));
-                jb2.setText(rs.getString("Book_Name"));
-                jb3.setText(rs.getString("Author"));
-                jb4.setText(rs.getString("Quantity"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    } catch (Exception e) {
+        e.printStackTrace(); // Handle any errors
     }
-      public void getstudentdetails(){
-           String studentid=jCTextField4.getText();
-        try {
-          con = DBConnection.getconnection();
-         PreparedStatement pst=con.prepareStatement("select * from student where StudentID = ?");
-         pst.setString(1, studentid);
-            ResultSet rs=pst.executeQuery();
-            while(rs.next()){
-                js1.setText(rs.getString("StudentID"));
-                js2.setText(rs.getString("Student_Name"));
-                js3.setText(rs.getString("Course"));
-                js4.setText(rs.getString("Contact_Number"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+}
+
+    public void getbookdetails() {
+    String bookid = jCTextField3.getText(); // Get the entered text from jCTextField3
+    DefaultListModel<String> listModel = new DefaultListModel<>(); // Model to hold suggestions
+
+    try {
+        // Establish database connection
+        con = DBConnection.getconnection();
+        
+        // Prepare the SQL query with LIKE clause for matching BookID or Book_Name
+        PreparedStatement pst = con.prepareStatement(
+            "SELECT BookID, Book_Name FROM book_details " + 
+            "WHERE BookID LIKE ? OR Book_Name LIKE ?"
+        );
+        
+        // Bind the entered text for partial matches
+        pst.setString(1, bookid + "%"); // Search by BookID
+        pst.setString(2, bookid + "%"); // Search by Book_Name
+        
+        // Execute the query and retrieve results
+        ResultSet rs = pst.executeQuery();
+        
+        // Loop through the result set and add each suggestion to the list model
+        while (rs.next()) {
+            String suggestion = rs.getString("BookID") + " - " + rs.getString("Book_Name");
+            listModel.addElement(suggestion); // Add to list model
         }
-      }
-      
-       public boolean valid1(){
-           boolean valid=false;
-           String studentid=jCTextField4.getText();
-        try {
-          con = DBConnection.getconnection();
-         PreparedStatement pst=con.prepareStatement("select * from student where StudentID = ?");
-         pst.setString(1, studentid);
-            ResultSet rs=pst.executeQuery();
-            if(rs.next()){
-                valid=true;
-            }
-            else{
-                valid=false;
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return valid;
-      }
-       
-        public boolean valid2(){
-        boolean valid=false;
-        String bookid=jCTextField3.getText();
-        try {
-          con = DBConnection.getconnection();
-PreparedStatement pst = con.prepareStatement(
-    "SELECT book_details.BookID, book_details.Book_Name, book_details.Author, book_stock.Quantity " +
-    "FROM book_details " +
-    "INNER JOIN book_stock ON book_details.BookID = book_stock.BookID " +
-    "WHERE book_details.BookID = ?"
-);
-         pst.setString(1, bookid);
-            ResultSet rs=pst.executeQuery();
-            if(rs.next()){
-                valid=true;
-            }
-            else{
-                valid=false;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return valid;
+
+        // Update jList1 with the new list model to show suggestions
+        jList1.setModel(listModel);
+
+    } catch (Exception e) {
+        e.printStackTrace(); // Print any exception that occurs
     }
-     
+}
+
+     public void displayStudentDetails(String studentID) {
+    try {
+        con = DBConnection.getconnection(); // Get the database connection
+
+        // Prepare the SQL query with JOIN to fetch book details and stock information
+        PreparedStatement pst = con.prepareStatement(
+            "SELECT StudentID,Student_Name,Course,Contact_Number FROM student WHERE StudentID = ?"
+        );
+        pst.setString(1, studentID); // Set the BookID parameter
+        ResultSet rs = pst.executeQuery(); // Execute the query
+
+        if (rs.next()) {  // If book details exist
+            // Populate the fields with book details and quantity
+            js1.setText(rs.getString("StudentID"));
+            js2.setText(rs.getString("Student_Name"));
+            js3.setText(rs.getString("Course"));
+            js4.setText(rs.getString("Contact_Number")); // Ensure that Quantity exists in book_stock
+        } else {
+            // Clear fields if no book is found
+            js1.setText("");
+            js2.setText("");
+            js3.setText("");
+            js4.setText("");
+        }
+        
+    } catch (Exception e) {
+        e.printStackTrace(); // Handle any errors
+    }
+}
+
+    public void getStudentdetails() {
+    String studentid = jCTextField5.getText(); // Get the entered text from jCTextField3
+    DefaultListModel<String> listModel = new DefaultListModel<>(); // Model to hold suggestions
+
+    try {
+        // Establish database connection
+        con = DBConnection.getconnection();
+        
+        // Prepare the SQL query with LIKE clause for matching BookID or Book_Name
+        PreparedStatement pst = con.prepareStatement(
+            "SELECT StudentID, Student_Name FROM student " + 
+            "WHERE StudentID LIKE ? OR Student_Name LIKE ?"
+        );
+        
+        // Bind the entered text for partial matches
+        pst.setString(1, studentid + "%"); // Search by BookID
+        pst.setString(2, studentid + "%"); // Search by Book_Name
+        
+        // Execute the query and retrieve results
+        ResultSet rs = pst.executeQuery();
+        
+        // Loop through the result set and add each suggestion to the list model
+        while (rs.next()) {
+            String suggestion = rs.getString("StudentID") + " - " + rs.getString("Student_Name");
+            listModel.addElement(suggestion); // Add to list model
+        }
+
+        // Update jList1 with the new list model to show suggestions
+        jList2.setModel(listModel);
+
+    } catch (Exception e) {
+        e.printStackTrace(); // Print any exception that occurs
+    }
+}
+    
+ 
       public boolean isallocate2(){
           
            boolean isallocated = false;
@@ -237,7 +288,7 @@ PreparedStatement pst = con.prepareStatement(
       }
       
       
-     
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -284,12 +335,16 @@ PreparedStatement pst = con.prepareStatement(
         jLabel21 = new javax.swing.JLabel();
         jLabel22 = new javax.swing.JLabel();
         jCTextField3 = new app.bolivia.swing.JCTextField();
-        jCTextField4 = new app.bolivia.swing.JCTextField();
-        jLabel23 = new javax.swing.JLabel();
-        jLabel24 = new javax.swing.JLabel();
         rSMaterialButtonCircle2 = new rojerusan.RSMaterialButtonCircle();
-        jDateChooser1 = new com.toedter.calendar.JDateChooser();
-        jDateChooser2 = new com.toedter.calendar.JDateChooser();
+        jPanel7 = new javax.swing.JPanel();
+        jPanel6 = new javax.swing.JPanel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jList1 = new javax.swing.JList<>();
+        jPanel8 = new javax.swing.JPanel();
+        jPanel9 = new javax.swing.JPanel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        jList2 = new javax.swing.JList<>();
+        jCTextField5 = new app.bolivia.swing.JCTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -381,7 +436,7 @@ PreparedStatement pst = con.prepareStatement(
                 .addGap(0, 0, Short.MAX_VALUE))
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(48, 48, 48)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -402,7 +457,7 @@ PreparedStatement pst = con.prepareStatement(
                             .addComponent(jLabel10)))
                     .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, 253, Short.MAX_VALUE)
                     .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap(99, Short.MAX_VALUE))
+                .addGap(99, 99, 99))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -592,33 +647,28 @@ PreparedStatement pst = con.prepareStatement(
         jLabel22.setForeground(new java.awt.Color(120, 176, 223));
         jLabel22.setText("Student ID :");
 
-        jCTextField3.setBorder(javax.swing.BorderFactory.createMatteBorder(0, 0, 3, 0, new java.awt.Color(120, 176, 223)));
+        jCTextField3.setBorder(javax.swing.BorderFactory.createMatteBorder(3, 3, 3, 3, new java.awt.Color(120, 176, 223)));
         jCTextField3.setForeground(new java.awt.Color(120, 176, 223));
         jCTextField3.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
         jCTextField3.setPlaceholder("Enter Book id...");
         jCTextField3.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jCTextField3FocusGained(evt);
+            }
             public void focusLost(java.awt.event.FocusEvent evt) {
                 jCTextField3FocusLost(evt);
             }
         });
-
-        jCTextField4.setBorder(javax.swing.BorderFactory.createMatteBorder(0, 0, 3, 0, new java.awt.Color(120, 176, 223)));
-        jCTextField4.setForeground(new java.awt.Color(120, 176, 223));
-        jCTextField4.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
-        jCTextField4.setPlaceholder("Enter Student id...");
-        jCTextField4.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                jCTextField4FocusLost(evt);
+        jCTextField3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCTextField3ActionPerformed(evt);
             }
         });
-
-        jLabel23.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        jLabel23.setForeground(new java.awt.Color(120, 176, 223));
-        jLabel23.setText("Issue Date :");
-
-        jLabel24.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        jLabel24.setForeground(new java.awt.Color(120, 176, 223));
-        jLabel24.setText("Due Date :");
+        jCTextField3.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jCTextField3KeyReleased(evt);
+            }
+        });
 
         rSMaterialButtonCircle2.setText("ISSUE BOOK");
         rSMaterialButtonCircle2.addActionListener(new java.awt.event.ActionListener() {
@@ -627,13 +677,117 @@ PreparedStatement pst = con.prepareStatement(
             }
         });
 
-        jDateChooser1.setBackground(new java.awt.Color(255, 255, 255));
-        jDateChooser1.setDateFormatString("yyyy/MM/dd");
-        jDateChooser1.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jList1.setToolTipText("");
+        jList1.setSelectionBackground(new java.awt.Color(255, 255, 255));
+        jList1.setValueIsAdjusting(true);
+        jList1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jList1MouseClicked(evt);
+            }
+        });
+        jList1.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                jList1ValueChanged(evt);
+            }
+        });
+        jScrollPane1.setViewportView(jList1);
 
-        jDateChooser2.setBackground(new java.awt.Color(255, 255, 255));
-        jDateChooser2.setDateFormatString("yyyy/MM/dd");
-        jDateChooser2.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING)
+        );
+        jPanel6Layout.setVerticalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addGap(0, 0, 0)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0))
+        );
+
+        javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
+        jPanel7.setLayout(jPanel7Layout);
+        jPanel7Layout.setHorizontalGroup(
+            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanel6, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        jPanel7Layout.setVerticalGroup(
+            jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel7Layout.createSequentialGroup()
+                .addComponent(jPanel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
+        );
+
+        jList2.setToolTipText("");
+        jList2.setSelectionBackground(new java.awt.Color(255, 255, 255));
+        jList2.setValueIsAdjusting(true);
+        jList2.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jList2FocusGained(evt);
+            }
+        });
+        jList2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jList2MouseClicked(evt);
+            }
+        });
+        jList2.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                jList2ValueChanged(evt);
+            }
+        });
+        jScrollPane2.setViewportView(jList2);
+
+        javax.swing.GroupLayout jPanel9Layout = new javax.swing.GroupLayout(jPanel9);
+        jPanel9.setLayout(jPanel9Layout);
+        jPanel9Layout.setHorizontalGroup(
+            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING)
+        );
+        jPanel9Layout.setVerticalGroup(
+            jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel9Layout.createSequentialGroup()
+                .addGap(0, 0, 0)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0))
+        );
+
+        javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
+        jPanel8.setLayout(jPanel8Layout);
+        jPanel8Layout.setHorizontalGroup(
+            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jPanel9, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        );
+        jPanel8Layout.setVerticalGroup(
+            jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel8Layout.createSequentialGroup()
+                .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
+        );
+
+        jCTextField5.setBorder(javax.swing.BorderFactory.createMatteBorder(3, 3, 3, 3, new java.awt.Color(120, 176, 223)));
+        jCTextField5.setForeground(new java.awt.Color(120, 176, 223));
+        jCTextField5.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jCTextField5.setPlaceholder("Enter Student id...");
+        jCTextField5.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                jCTextField5FocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                jCTextField5FocusLost(evt);
+            }
+        });
+        jCTextField5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCTextField5ActionPerformed(evt);
+            }
+        });
+        jCTextField5.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jCTextField5KeyReleased(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -641,78 +795,73 @@ PreparedStatement pst = con.prepareStatement(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
+                        .addGap(46, 46, 46)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel21, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jLabel22, javax.swing.GroupLayout.PREFERRED_SIZE, 122, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel23)
-                            .addComponent(jLabel24))
-                        .addGap(23, 23, 23)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jCTextField4, javax.swing.GroupLayout.DEFAULT_SIZE, 181, Short.MAX_VALUE)
-                            .addComponent(jCTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(jDateChooser1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jDateChooser2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addContainerGap(77, Short.MAX_VALUE))
+                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jCTextField3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(jPanel2Layout.createSequentialGroup()
+                                    .addComponent(jLabel21, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGap(157, 157, 157))
+                                .addComponent(jPanel7, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(jCTextField5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap(53, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 55, Short.MAX_VALUE)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
                                 .addComponent(jLabel20)
-                                .addGap(104, 104, 104))
+                                .addGap(55, 55, 55))
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                                .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.PREFERRED_SIZE, 339, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(30, 30, 30))))))
+                                .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.PREFERRED_SIZE, 271, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(31, 31, 31))))))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGap(83, 83, 83)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(55, 55, 55)
-                        .addComponent(jLabel21))
-                    .addComponent(jCTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(36, 36, 36)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel22)
-                    .addComponent(jCTextField4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(44, 44, 44)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel23)
-                    .addComponent(jDateChooser2, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(53, 53, 53)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel24)
-                    .addComponent(jDateChooser1, javax.swing.GroupLayout.PREFERRED_SIZE, 35, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(39, 39, 39))
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(0, 0, Short.MAX_VALUE))
+            .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGap(74, 74, 74)
+                .addComponent(jLabel20, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jLabel21)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jCTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(64, 64, 64)
+                .addComponent(jLabel22)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jCTextField5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, 0)
+                .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(rSMaterialButtonCircle2, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(84, 84, 84))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(0, 0, 0)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addGap(0, 0, 0)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, 667, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
@@ -720,9 +869,81 @@ PreparedStatement pst = con.prepareStatement(
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
+    private void jList1ValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_jList1ValueChanged
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jList1ValueChanged
+
+    private void jList1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jList1MouseClicked
+        // TODO add your handling code here:
+        if (evt.getClickCount() == 1) { // Ensure it is a single click
+            // Get the selected value from jList1
+            String selectedValue = jList1.getSelectedValue();
+
+            if (selectedValue != null) {
+                // Extract the BookID or relevant identifier from the selected value
+                String[] parts = selectedValue.split(" - ");
+                String bookID = parts[0]; // Assuming BookID is before the dash
+
+                // Fetch and display book details using the BookID
+                displayBookDetails(bookID);
+            }
+        }
+    }//GEN-LAST:event_jList1MouseClicked
+
+    private void rSMaterialButtonCircle2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rSMaterialButtonCircle2ActionPerformed
+        // TODO add your handling code here:
+
+        if(isallocate2()==false)
+        {
+            if(getPendingCount()==false)
+            {
+                if(issueBook()==true)
+                {
+
+                    JOptionPane.showMessageDialog(this, "book issued successfully");
+                    updateBookCount();
+
+                }
+                else
+                {
+                    JOptionPane.showMessageDialog(this, "can't issue the book");
+                }
+            }
+
+            else
+            {
+                JOptionPane.showMessageDialog(this, "Student has already allocated two books");
+            }
+        }
+
+        else
+        {
+            JOptionPane.showMessageDialog(this, "this student already has this book");
+        }
+
+    }//GEN-LAST:event_rSMaterialButtonCircle2ActionPerformed
+
+    private void jCTextField3KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jCTextField3KeyReleased
+        getbookdetails();
+    }//GEN-LAST:event_jCTextField3KeyReleased
+
+    private void jCTextField3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCTextField3ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jCTextField3ActionPerformed
+
+    private void jCTextField3FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jCTextField3FocusLost
+        // TODO add your handling code here:
+        jPanel6.setVisible(false);
+    }//GEN-LAST:event_jCTextField3FocusLost
+
+    private void jCTextField3FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jCTextField3FocusGained
+        // TODO add your handling code here:
+        jPanel6.setVisible(true);
+    }//GEN-LAST:event_jCTextField3FocusGained
+
     private void jLabel1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel1MouseClicked
         // TODO add your handling code here:
-      
+
         mail=Login_Page1.getInstance().getmail();
         Home_Page1 home =new Home_Page1();
         home.jLabel3.setText(Login_Page1.getInstance().getName());
@@ -730,68 +951,50 @@ PreparedStatement pst = con.prepareStatement(
         this.dispose();
     }//GEN-LAST:event_jLabel1MouseClicked
 
-    private void rSMaterialButtonCircle2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rSMaterialButtonCircle2ActionPerformed
+    private void jList2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jList2MouseClicked
         // TODO add your handling code here:
-        
- if(isallocate2()==false)
- {
-    if(getPendingCount()==false)
-      {
-        if(issueBook()==true)
-       {
-           
-           JOptionPane.showMessageDialog(this, "book issued successfully");
-           updateBookCount();
-         
-       }
-       else
-       {
-           JOptionPane.showMessageDialog(this, "can't issue the book");
-       }
-      }
-        
-    else
-      {
-           JOptionPane.showMessageDialog(this, "Student has already allocated two books");
-      }
- }
- 
- else
- {
-      JOptionPane.showMessageDialog(this, "this student already has this book");
- }
-        
- 
-    }//GEN-LAST:event_rSMaterialButtonCircle2ActionPerformed
+         if (evt.getClickCount() == 1) { // Ensure it is a single click
+            // Get the selected value from jList1
+            String selectedValue = jList2.getSelectedValue();
 
-    private void jCTextField3FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jCTextField3FocusLost
-        // TODO add your handling code here:
-        if(jCTextField3.getText().trim().isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Empty Book ID");
-    } else {
-        if(valid2()) {
-            getbookdetails();
-        } else {
-            JOptionPane.showMessageDialog(this, "Wrong Book ID"); 
+            if (selectedValue != null) {
+                // Extract the BookID or relevant identifier from the selected value
+                String[] parts = selectedValue.split(" - ");
+                String studentID = parts[0]; // Assuming BookID is before the dash
+
+                // Fetch and display book details using the BookID
+                displayStudentDetails(studentID);
+            }
         }
-    }
+    }//GEN-LAST:event_jList2MouseClicked
 
-        
-    }//GEN-LAST:event_jCTextField3FocusLost
-
-    private void jCTextField4FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jCTextField4FocusLost
+    private void jList2ValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_jList2ValueChanged
         // TODO add your handling code here:
-        if(jCTextField4.getText().trim().isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Empty Student ID");
-    } else {
-        if(valid1()) {
-            getstudentdetails();
-        } else {
-            JOptionPane.showMessageDialog(this, "Wrong Student ID"); 
-        }
-    }
+    }//GEN-LAST:event_jList2ValueChanged
+
+    private void jCTextField5FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jCTextField5FocusGained
+        // TODO add your handling code here:
+        jPanel9.setVisible(true);
+    }//GEN-LAST:event_jCTextField5FocusGained
+
+    private void jCTextField5FocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jCTextField5FocusLost
+        // TODO add your handling code here:
+        jPanel9.setVisible(false);
+    }//GEN-LAST:event_jCTextField5FocusLost
+
+    private void jCTextField5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCTextField5ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jCTextField5ActionPerformed
+
+    private void jCTextField5KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jCTextField5KeyReleased
+        // TODO add your handling code here:
+        getStudentdetails();
+    }//GEN-LAST:event_jCTextField5KeyReleased
+
+    private void jList2FocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_jList2FocusGained
+        // TODO add your handling code here:
         
-    }//GEN-LAST:event_jCTextField4FocusLost
+    }//GEN-LAST:event_jList2FocusGained
 
     /**
      * @param args the command line arguments
@@ -830,9 +1033,7 @@ PreparedStatement pst = con.prepareStatement(
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private app.bolivia.swing.JCTextField jCTextField3;
-    private app.bolivia.swing.JCTextField jCTextField4;
-    private com.toedter.calendar.JDateChooser jDateChooser1;
-    private com.toedter.calendar.JDateChooser jDateChooser2;
+    private app.bolivia.swing.JCTextField jCTextField5;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -848,8 +1049,6 @@ PreparedStatement pst = con.prepareStatement(
     private javax.swing.JLabel jLabel20;
     private javax.swing.JLabel jLabel21;
     private javax.swing.JLabel jLabel22;
-    private javax.swing.JLabel jLabel23;
-    private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
@@ -857,11 +1056,19 @@ PreparedStatement pst = con.prepareStatement(
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
+    private javax.swing.JList<String> jList1;
+    private javax.swing.JList<String> jList2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
+    private javax.swing.JPanel jPanel8;
+    private javax.swing.JPanel jPanel9;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JLabel jb1;
     private javax.swing.JLabel jb2;
     private javax.swing.JLabel jb3;
