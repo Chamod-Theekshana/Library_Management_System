@@ -90,10 +90,9 @@ private File selectedFile;
         PreparedStatement checkPst = con.prepareStatement(checkSql);
         checkPst.setString(1, student_id);
         ResultSet rs = checkPst.executeQuery();
-        rs.next();
-        int count = rs.getInt(1);
+        
 
-        if (count > 0) {
+        if (rs.next()) {
             // Show a message if StudentID already exists
             JOptionPane.showMessageDialog(null, "Student ID '" + student_id + "' already exists. Please use a different ID.", "Duplicate ID Error", JOptionPane.ERROR_MESSAGE);
             return false;
