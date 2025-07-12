@@ -1,0 +1,73 @@
+# 📚 Library Management System (SQL Schema)
+
+This repository contains the SQL schema for a **Library Management System**, which includes tables for managing books, students, admins, logins, and issued book records.
+
+---
+
+## 🗂️ Database Schema
+
+```sql
+-- Create book_details table
+CREATE TABLE book_details (
+    BookID VARCHAR(50) PRIMARY KEY,
+    Book_Name VARCHAR(255) NOT NULL,
+    Author VARCHAR(255) NOT NULL
+);
+
+-- Create book_stock table
+CREATE TABLE book_stock (
+    BookID VARCHAR(50),
+    Quantity INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (BookID) REFERENCES book_details(BookID)
+);
+
+-- Create student table
+CREATE TABLE student (
+    StudentID VARCHAR(50) PRIMARY KEY,
+    Student_Name VARCHAR(255) NOT NULL,
+    Course ENUM('IT', 'ENG', 'ACC', 'MNG', 'THM', 'EN') NOT NULL,
+    Contact_Number VARCHAR(20),
+    Photo BLOB,
+    Address TEXT
+);
+
+-- Create admin table
+CREATE TABLE admin (
+    ID_Number VARCHAR(50) PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL,
+    Contact VARCHAR(20)
+);
+
+-- Create login table
+CREATE TABLE login (
+    ID_Number VARCHAR(50),
+    email VARCHAR(255),
+    password VARCHAR(255),
+    FOREIGN KEY (ID_Number) REFERENCES admin(ID_Number)
+);
+
+-- Create signin table
+CREATE TABLE signin (
+    LoginID VARCHAR(255),
+    ID_Number VARCHAR(50),
+    Verify_Code INT,
+    FOREIGN KEY (ID_Number) REFERENCES admin(ID_Number)
+);
+
+-- Create issue_book_details table
+CREATE TABLE issue_book_details (
+    BookID VARCHAR(50),
+    StudentID VARCHAR(50),
+    Issue_Date DATE NOT NULL,
+    Due_Date DATE NOT NULL,
+    Status ENUM('pending', 'returned') DEFAULT 'pending',
+    FOREIGN KEY (BookID) REFERENCES book_details(BookID),
+    FOREIGN KEY (StudentID) REFERENCES student(StudentID)
+);
+
+-- Insert sample data for current user
+INSERT INTO admin (ID_Number, Name, Contact) 
+VALUES ('ADMIN001', 'Admin', 'XXXXXXXXXXX');
+
+INSERT INTO login (ID_Number, email, password) 
+VALUES ('ADMIN001', 'admin@example.com', 'password');
